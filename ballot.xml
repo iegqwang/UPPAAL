@@ -1,0 +1,273 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE nta PUBLIC '-//Uppaal Team//DTD Flat System 1.1//EN' 'http://www.it.uu.se/research/group/darts/uppaal/flat-1_1.dtd'>
+<nta>
+	<declaration>// Place global declarations here.
+chan right, delegate, vote, changeState;
+
+//系统状态,0代表异常（系统中止或时间到了），1代表正常
+int flag = 0;
+//复位状态，0代表不可以复位，1代表可以复位
+int resetFlag = 0;
+
+//global time
+clock time ;
+const int LIMITTIME = 100;  
+
+//全局变量，用于传参相加中间变量
+int tempWeight, tempCount;
+
+
+//广播通道，用于实现重置
+broadcast chan reset;</declaration>
+	<template>
+		<name x="5" y="5">Voter</name>
+		<parameter>const int _weight</parameter>
+		<declaration>// 用户当前票权（含被委托数量）
+int weight = 0;
+
+//是否已经投票
+bool voted = false;
+	
+</declaration>
+		<location id="id0" x="-1568" y="-352">
+			<name x="-1592" y="-384">L_delegated</name>
+		</location>
+		<location id="id1" x="-2000" y="-352">
+			<name x="-2040" y="-360">Idle</name>
+		</location>
+		<location id="id2" x="-1832" y="-208">
+			<name x="-1848" y="-200">L_voted</name>
+		</location>
+		<location id="id3" x="-1832" y="-352">
+			<name x="-1848" y="-384">Initial</name>
+		</location>
+		<location id="id4" x="-1568" y="-464">
+			<name x="-1592" y="-496">L_delegating</name>
+		</location>
+		<init ref="id1"/>
+		<transition>
+			<source ref="id0"/>
+			<target ref="id1"/>
+			<label kind="synchronisation" x="-1904" y="-144">reset?</label>
+			<label kind="assignment" x="-1944" y="-120">weight = 0, voted = false</label>
+			<nail x="-1568" y="-120"/>
+			<nail x="-1992" y="-120"/>
+		</transition>
+		<transition>
+			<source ref="id4"/>
+			<target ref="id1"/>
+			<label kind="synchronisation" x="-1816" y="-504">reset?</label>
+			<label kind="assignment" x="-1848" y="-488">weight = 0, voted = false</label>
+			<nail x="-2000" y="-464"/>
+		</transition>
+		<transition>
+			<source ref="id3"/>
+			<target ref="id1"/>
+			<label kind="synchronisation" x="-1920" y="-432">reset?</label>
+			<label kind="assignment" x="-1928" y="-416">weight = 0</label>
+			<nail x="-1992" y="-432"/>
+		</transition>
+		<transition>
+			<source ref="id2"/>
+			<target ref="id1"/>
+			<label kind="synchronisation" x="-1944" y="-232">reset?</label>
+			<label kind="assignment" x="-1952" y="-200">weight = 0, 
+voted = false</label>
+			<nail x="-1960" y="-208"/>
+		</transition>
+		<transition>
+			<source ref="id0"/>
+			<target ref="id2"/>
+			<label kind="guard" x="-1744" y="-264">voted == false &amp;&amp; flag == 1</label>
+			<label kind="synchronisation" x="-1672" y="-216">vote!</label>
+			<label kind="assignment" x="-1720" y="-248">tempCount = weight,
+voted = true</label>
+		</transition>
+		<transition>
+			<source ref="id3"/>
+			<target ref="id0"/>
+			<label kind="guard" x="-1712" y="-384">flag == 1</label>
+			<label kind="synchronisation" x="-1712" y="-368">delegate?</label>
+			<label kind="assignment" x="-1736" y="-352">weight += tempWeight</label>
+		</transition>
+		<transition>
+			<source ref="id1"/>
+			<target ref="id3"/>
+			<label kind="synchronisation" x="-1936" y="-368">right?</label>
+			<label kind="assignment" x="-1968" y="-352">weight = _weight</label>
+		</transition>
+		<transition>
+			<source ref="id3"/>
+			<target ref="id2"/>
+			<label kind="guard" x="-1888" y="-312">flag == 1</label>
+			<label kind="synchronisation" x="-1872" y="-296">vote!</label>
+			<label kind="assignment" x="-1904" y="-280">voted = true,
+tempCount = weight</label>
+		</transition>
+		<transition>
+			<source ref="id3"/>
+			<target ref="id4"/>
+			<label kind="guard" x="-1552" y="-456">flag == 1</label>
+			<label kind="synchronisation" x="-1616" y="-448">delegate!</label>
+			<label kind="assignment" x="-1656" y="-432">voted = true, weight = 0,
+tempWeight = weight</label>
+		</transition>
+	</template>
+	<template>
+		<name>Chairperson</name>
+		<declaration>//计数时钟
+clock y;
+
+//自增
+const int SECOND = 1;</declaration>
+		<location id="id5" x="-2000" y="-472">
+			<name x="-2096" y="-480">ChairPerson</name>
+		</location>
+		<init ref="id5"/>
+		<transition>
+			<source ref="id5"/>
+			<target ref="id5"/>
+			<label kind="guard" x="-1952" y="-416">y&gt;= SECOND &amp;&amp; flag == 1</label>
+			<label kind="synchronisation" x="-1912" y="-400">right!</label>
+			<label kind="assignment" x="-1912" y="-384">y = 0</label>
+			<nail x="-1936" y="-408"/>
+			<nail x="-1864" y="-456"/>
+		</transition>
+		<transition>
+			<source ref="id5"/>
+			<target ref="id5"/>
+			<label kind="guard" x="-2280" y="-408">time &gt; LIMITTIME &amp;&amp; resetFlag == 1</label>
+			<label kind="synchronisation" x="-2136" y="-392">reset!</label>
+			<label kind="assignment" x="-2280" y="-376">time = 0 ,flag = 0,resetFlag = 0</label>
+			<nail x="-2104" y="-424"/>
+			<nail x="-1984" y="-384"/>
+		</transition>
+		<transition>
+			<source ref="id5"/>
+			<target ref="id5"/>
+			<label kind="guard" x="-1984" y="-592">time &gt; y &amp;&amp; y &gt;=SECOND &amp;&amp; time &lt;= LIMITTIME</label>
+			<label kind="assignment" x="-1904" y="-576">y = 0</label>
+			<nail x="-1960" y="-576"/>
+			<nail x="-1864" y="-520"/>
+		</transition>
+		<transition>
+			<source ref="id5"/>
+			<target ref="id5"/>
+			<label kind="guard" x="-2208" y="-576">y &gt;= SECOND</label>
+			<label kind="synchronisation" x="-2192" y="-560">changeState!</label>
+			<label kind="assignment" x="-2320" y="-544">flag = 1 - flag, y = 0,resetFlag = 1</label>
+			<nail x="-2024" y="-584"/>
+			<nail x="-2136" y="-520"/>
+		</transition>
+	</template>
+	<template>
+		<name>Sys</name>
+		<location id="id6" x="-520" y="-40">
+			<name x="-552" y="-64">Idle</name>
+		</location>
+		<location id="id7" x="-8" y="-40">
+			<name x="8" y="-48">End</name>
+		</location>
+		<location id="id8" x="-160" y="-40">
+			<name x="-184" y="-72">Stop</name>
+		</location>
+		<location id="id9" x="-360" y="-40">
+			<name x="-392" y="-32">Work</name>
+		</location>
+		<init ref="id6"/>
+		<transition>
+			<source ref="id8"/>
+			<target ref="id6"/>
+			<label kind="synchronisation" x="-296" y="-128">reset?</label>
+			<nail x="-192" y="-129"/>
+			<nail x="-504" y="-129"/>
+		</transition>
+		<transition>
+			<source ref="id9"/>
+			<target ref="id6"/>
+			<label kind="synchronisation" x="-456" y="-112">reset?</label>
+			<nail x="-368" y="-48"/>
+			<nail x="-384" y="-112"/>
+			<nail x="-480" y="-112"/>
+		</transition>
+		<transition>
+			<source ref="id6"/>
+			<target ref="id9"/>
+			<label kind="guard" x="-480" y="-40">flag == 0</label>
+			<label kind="synchronisation" x="-500" y="-55">changeState?</label>
+		</transition>
+		<transition>
+			<source ref="id9"/>
+			<target ref="id7"/>
+			<label kind="guard" x="-136" y="40">time &gt; LIMITTIME</label>
+			<label kind="assignment" x="-104" y="64">flag = 0</label>
+			<nail x="-360" y="64"/>
+			<nail x="-8" y="64"/>
+		</transition>
+		<transition>
+			<source ref="id7"/>
+			<target ref="id6"/>
+			<label kind="synchronisation" x="-64" y="-120">reset?</label>
+			<nail x="-8" y="-144"/>
+			<nail x="-520" y="-144"/>
+		</transition>
+		<transition>
+			<source ref="id8"/>
+			<target ref="id7"/>
+			<label kind="guard" x="-136" y="-64">time &gt; LIMITTIME</label>
+			<label kind="assignment" x="-112" y="-40">flag = 0</label>
+		</transition>
+		<transition>
+			<source ref="id8"/>
+			<target ref="id9"/>
+			<label kind="guard" x="-296" y="24">flag == 0</label>
+			<label kind="synchronisation" x="-304" y="0">changeState?</label>
+			<nail x="-208" y="24"/>
+			<nail x="-328" y="24"/>
+		</transition>
+		<transition>
+			<source ref="id9"/>
+			<target ref="id8"/>
+			<label kind="guard" x="-304" y="-56">flag == 1</label>
+			<label kind="synchronisation" x="-320" y="-40">changeState?</label>
+		</transition>
+	</template>
+	<template>
+		<name>Proposal</name>
+		<declaration>//提案的票数，当相应投票时候，提案得票数自动增加
+int voteCount;</declaration>
+		<location id="id10" x="-416" y="-216">
+			<name x="-456" y="-200">ProposalAdd</name>
+		</location>
+		<init ref="id10"/>
+		<transition>
+			<source ref="id10"/>
+			<target ref="id10"/>
+			<label kind="synchronisation" x="-536" y="-240">reset?</label>
+			<label kind="assignment" x="-576" y="-224">voteCount = 0</label>
+			<nail x="-488" y="-184"/>
+			<nail x="-488" y="-264"/>
+		</transition>
+		<transition>
+			<source ref="id10"/>
+			<target ref="id10"/>
+			<label kind="synchronisation" x="-344" y="-232">vote?</label>
+			<label kind="assignment" x="-344" y="-216">voteCount += tempCount</label>
+			<nail x="-344" y="-256"/>
+			<nail x="-344" y="-176"/>
+		</transition>
+	</template>
+	<system>// Place template instantiations here.
+Voter1 = Voter(1);
+Voter2 = Voter(2);
+Voter3 = Voter(1);
+Voter4 = Voter(4);
+
+Proposal1 = Proposal();
+Proposal2 = Proposal();
+Proposal3 = Proposal();
+Proposal4 = Proposal();
+
+// List one or more processes to be composed into a system.
+system Voter1, Voter2, Voter3, Voter4, Chairperson, Sys, Proposal1, Proposal2, Proposal3, Proposal4;</system>
+</nta>
