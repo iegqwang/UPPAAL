@@ -1,0 +1,68 @@
+#states 11
+#trans 15
+#clocks 5
+X0 X1 X2  X3 X4 
+
+state: 0
+prop: LIBRE
+invar: TRUE
+trans:
+TRUE => DECROCHER ; RESET{ X0 } ; goto 1
+
+state: 1
+prop: DECR
+invar: X0=0
+trans:
+X0=0 => DEBUT_COMP ; RESET{ X0  X3 X4 } ; goto 2
+
+state: 2
+invar: X3<=40 and X4<=20
+trans:
+X3=40 or X4=20 => TIMEOUT2 ; RESET{ X3 X4 } ; goto 3
+X3<40 and X4<20 => RACROCHER ; RESET{ X3 X4 } ; goto 3
+X3<40 and X4<20 => CHIFFRE1 ; RESET{ X4 } ; goto 4
+
+state: 3
+invar: X4=0
+trans:
+X4=0 => INT_COMP ; RESET{ X0  X3 X4 } ; goto 0
+
+state: 4
+prop: END_DIAL CHIFF1
+invar: X4=0
+trans:
+X4=0 => PRET_A_SONNER ; RESET{ X0  X3 X4 } ; goto 5
+
+state: 5
+invar: X0=0
+trans:
+X0=0 => DEBUT_SONNERIE ; RESET{ X0 X2 } ; goto 6
+
+state: 6
+prop: DSON
+invar: X2=0
+trans:
+X2=0 => SONNER ; RESET{ X1 X2 } ; goto 7
+
+state: 7
+invar: X1<=60 and X2<=3
+trans:
+X2=3 => SONNER ; RESET{ X2 } ; goto 7
+X1=60 => TIMEOUT1 ; RESET{ X1 X2 } ; goto 8
+X1<60 and X2<3 => CONNECTER ; RESET{ X1 X2 } ; goto 9
+
+state: 8
+invar: X1=0
+trans:
+X1=0 => INT_SONNERIE ; RESET{ X0 X0 } ; goto 0
+
+state: 9
+invar: X1=0
+trans:
+X1=0 => CONNECTION ; RESET{ X0 X1 X2 } ; goto 10
+
+state: 10
+prop: CONNECT
+invar: X0<=180
+trans:
+X0=180 => INT_COMM ; RESET{ X0 } ; goto 0
