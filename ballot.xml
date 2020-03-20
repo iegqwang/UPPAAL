@@ -4,28 +4,28 @@
 	<declaration>// Place global declarations here.
 chan right, delegate, vote, changeState;
 
-//系统状态,0代表异常（系统中止或时间到了），1代表正常
+//System status,0 for exception (system abort or time out), 1 for normal
 int flag = 0;
-//复位状态，0代表不可以复位，1代表可以复位
+//Reset state, 0 means can't reset, 1 means can reset
 int resetFlag = 0;
 
 //global time
 clock time ;
 const int LIMITTIME = 100;  
 
-//全局变量，用于传参相加中间变量
+//Global variable used to add intermediate variables
 int tempWeight, tempCount;
 
 
-//广播通道，用于实现重置
+// broadcast channel for reset
 broadcast chan reset;</declaration>
 	<template>
 		<name x="5" y="5">Voter</name>
 		<parameter>const int _weight</parameter>
-		<declaration>// 用户当前票权（含被委托数量）
+		<declaration>// User's current ticket rights (including the number of delegates)
 int weight = 0;
 
-//是否已经投票
+//Have you voted
 bool voted = false;
 	
 </declaration>
@@ -115,10 +115,10 @@ tempWeight = weight</label>
 	</template>
 	<template>
 		<name>Chairperson</name>
-		<declaration>//计数时钟
+		<declaration>//Count the clock
 clock y;
 
-//自增
+//Since the increase
 const int SECOND = 1;</declaration>
 		<location id="id5" x="-2000" y="-472">
 			<name x="-2096" y="-480">ChairPerson</name>
@@ -234,7 +234,7 @@ const int SECOND = 1;</declaration>
 	</template>
 	<template>
 		<name>Proposal</name>
-		<declaration>//提案的票数，当相应投票时候，提案得票数自动增加
+		<declaration>//The number of votes for a proposal is automatically increased when a corresponding vote is taken
 int voteCount;</declaration>
 		<location id="id10" x="-416" y="-216">
 			<name x="-456" y="-200">ProposalAdd</name>

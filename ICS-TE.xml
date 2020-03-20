@@ -1,35 +1,37 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!DOCTYPE nta PUBLIC '-//Uppaal Team//DTD Flat System 1.1//EN' 'http://www.it.uu.se/research/group/darts/uppaal/flat-1_2.dtd'>
 <nta>
-	<declaration>// 液位传感器
-bool l=false; //低液位
-bool m=false; //中液位
-bool h=false; //高液位
+	<declaration>// Liquid level sensor
+bool l=false; // Low liquid level
+bool m=false; // Middle liquid level
+bool h=false; // High liquid level
 
-bool s=false; //总开关
+bool s=false; // Switch
 
-int q=0; //产检传感器，&gt;=90 产品合格
-int w=0; //搅拌器转速，0停止，100正常工作
+int q=0; //Production sensor
+int w=0; //Agitator speed
 
-bool x=false; //进料口A
-bool y=false; //进料口B
-bool z=false; //搅拌器工作状态
+bool x=false; //Feed port A
+bool y=false; //Feed port B
+bool z=false; //Working condition of agitator
 
-bool u=false; //产品阀
-bool v=false; //废品阀
-//bool f=false;  //产品排出状态，正常排出/排出异常
+bool u=false; //The product valve
+bool v=false; //The waste valve
 
-//全局时钟
+//Globle clock
 clock gc;
 
-//通道
+//Channel
 chan Start;
 broadcast chan Stop;
 
-//预设时间
+//The default time
 const int preheatingTime=100;
 const int feedingTime=5000;
-const int inspectionTime=10000;</declaration>
+const int inspectionTime=10000;
+
+//Switch flag bit, prevent broadcast channel from updating automatically
+bool flag=false;</declaration>
 	<template>
 		<name>Admin</name>
 		<location id="id0" x="-85" y="-50">
@@ -56,7 +58,7 @@ gc:=0</label>
 	</template>
 	<template>
 		<name x="5" y="5">System</name>
-		<declaration>//局部时钟
+		<declaration>
 clock c;</declaration>
 		<location id="id1" x="-544" y="-221">
 			<name x="-554" y="-255">Init</name>
@@ -366,23 +368,23 @@ system Admin, System;
 	<queries>
 		<query>
 			<formula>A[] not deadlock</formula>
-			<comment>系统可用性（1） R13 验证系统是否存在死锁，以确保整个系统的访问与使用未被恶意代码破坏</comment>
+			<comment>System availability (1) R13 verifies whether there is a deadlock in the system to ensure that the access and use of the entire system is not broken by malicious code</comment>
 		</query>
 		<query>
 			<formula></formula>
 			<comment></comment>
 		</query>
 		<query>
-			<formula>A&lt;&gt; ((System.CheckMediumLL or System.CheckHighLL) and gc&gt;=feedingTime) imply System.Intervention</formula>
-			<comment>活性约束（3） R12 时间约束，当任意进料口在进料容错时间内仍未触发液位传感器，说明进料口出现异常，必须人工干预</comment>
+			<formula>A[] gc&gt;=feedingTime</formula>
+			<comment>Activity constraint (3) R12 time constraint: when any feed inlet fails to trigger the liquid level sensor within the feed fault-tolerant time, it indicates that the feed inlet is abnormal and must be manually intervened</comment>
 		</query>
 		<query>
-			<formula>A&lt;&gt; !s imply (!x and !y and !u and !v)</formula>
-			<comment>活性约束（3） R11 当总开关关闭时，所有阀门都将关闭</comment>
+			<formula>!s --&gt; !x and !y and !u and !v</formula>
+			<comment>Activity constraint (3) R11 when the master switch is closed, all valves will be closed (the waste valve will be closed after empties)</comment>
 		</query>
 		<query>
-			<formula>A&lt;&gt; s imply (u and v)</formula>
-			<comment>活性约束（3） R10 当总开关打开时，至少有一个排料阀会打开</comment>
+			<formula>E&lt;&gt; s and (u or v)</formula>
+			<comment>activity constraint (3) R10 when the master switch is open, at least one discharge valve will open</comment>
 		</query>
 		<query>
 			<formula></formula>
@@ -390,19 +392,19 @@ system Admin, System;
 		</query>
 		<query>
 			<formula>A[] u imply q&gt;=90</formula>
-			<comment>逻辑约束（4） R9 当产品阀打开时，产品质量必须合格</comment>
+			<comment>Logical constraint (4) R9 when the product valve opens, the product must be qualified</comment>
 		</query>
 		<query>
-			<formula>A[] (System.CheckQuality and l and m and h) imply q&gt;=70</formula>
-			<comment>逻辑约束（4） R8 当到达高液位时，产检传感器必须随时检测产品质量</comment>
+			<formula>A[] (l and m and h) imply q&gt;=70</formula>
+			<comment>Logical constraint (4) when R8 reaches the high liquid level, the production inspection sensor must check the product quality at any time</comment>
 		</query>
 		<query>
-			<formula>A[] (System.FeedingB and l and m) imply !x</formula>
-			<comment>逻辑约束（4） R7 当到达中液位时，进料口A必须关闭</comment>
+			<formula>A[] (l and m) imply !x</formula>
+			<comment>Logical constraint (4) R7 when the medium level is reached, inlet A must be closed</comment>
 		</query>
 		<query>
-			<formula>A[] (System.End and !l) imply (!u and !v)</formula>
-			<comment>逻辑约束（4） R6 当低于低液位时，所有排料阀必须关闭</comment>
+			<formula>A[] !l imply (!u and !v)</formula>
+			<comment>Logic constraint (4) R6 when below low level, all discharge valves must be closed</comment>
 		</query>
 		<query>
 			<formula></formula>
@@ -410,19 +412,19 @@ system Admin, System;
 		</query>
 		<query>
 			<formula>A[] y imply w==100</formula>
-			<comment>冲突约束（4） R5 一旦进料口B打开，搅拌器必须启动</comment>
+			<comment>Conflict constraint (4) R5 once inlet B is opened, the agitator must be started</comment>
 		</query>
 		<query>
 			<formula>A[] !((x or y) and (u or v))</formula>
-			<comment>冲突约束（4） R4 任意进料口与任意排料阀不能同时打开</comment>
+			<comment>Conflict constraint (4) R4 any feed port and any discharge valve cannot be opened at the same time</comment>
 		</query>
 		<query>
 			<formula>A[] !(u and v)</formula>
-			<comment>冲突约束（4） R3 产品阀和废品阀不能同时打开</comment>
+			<comment>Conflict constraint (4) R3 product valve and waste valve cannot be opened at the same time</comment>
 		</query>
 		<query>
 			<formula>A[] !(x and y)</formula>
-			<comment>冲突约束（4） R2 进料口A和进料口B不能同时打开</comment>
+			<comment>Conflict constraint (4) R2 inlet A and inlet B cannot be opened at the same time</comment>
 		</query>
 		<query>
 			<formula></formula>
@@ -430,7 +432,7 @@ system Admin, System;
 		</query>
 		<query>
 			<formula>A[] w==0 or w==100</formula>
-			<comment>阈值约束（1） R1 搅拌器转速只能是0或100</comment>
+			<comment>Threshold constraint (1) R1 agitator speed can only be 0 or 100</comment>
 		</query>
 	</queries>
 </nta>

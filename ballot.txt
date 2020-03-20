@@ -33,12 +33,11 @@ contract Ballot {
     event e_vote(uint8 toProposal);
     event e_setState(bool state);
     
-    //合约有效期判定
     modifier onlyBefore{
     	require(now <= deadline);
     	_;
     }
-    //授权用户判定，$(_weight)大于0
+    
     modifier onlyUsers (address _address){
     	require(voters[_address].weight != 0);
     	_;
@@ -51,22 +50,15 @@ contract Ballot {
     
     using safeMath for uint;
 
-    /// 创建（$_numProposals个，有效期为_timeLimit）提案
     constructor(uint8 _numProposals,uint _timeLimit) public {
-    		//合约构造者为主席
         chairperson = msg.sender;
-        //默认主席票券为1
         voters[chairperson].weight = 1;
         proposals.length = _numProposals;
-        //截至时间
         deadline = now + _timeLimit;
         state = true;
     }
 
-    /// 授权用户(toVoter) 以票权 $(_weight)
-    /// 只能由主席(chairperson)授权
-    /*授权条件为：系统状态为ture
-    							用户初初始票权为0，未参与投票*/
+    
     function giveRightToVote(address toVoter, uint _weight) public 
         onlyBefore onlyUsers(msg.sender) onlyChairperson{
         	  require(state);
@@ -82,9 +74,7 @@ contract Ballot {
             Voter storage sender = voters[msg.sender]; 
             Voter storage delegateTo = voters[to];
             
-            /*委托条件为：投票状态为true，不能委托自己；
-            							用户未投票，两者未参与委托；
-            							用户合法*/
+            
             require(state && to != msg.sender);
             require(!sender.voted && delegateTo.delegated != false && sender.delegated != false);
             require(delegateTo.weight != 0);
@@ -95,16 +85,13 @@ contract Ballot {
             delegateTo.delegated = true;
             
             delegateTo.weight = delegateTo.weight.add(sender.weight);
-            //此时$(to)为最终代理 
+            
             emit e_delegate(to);
     }
 
-    /// 投单次票给提案$(toProposal).
     function vote(uint8 toProposal) public onlyBefore onlyUsers(msg.sender){
         Voter storage sender = voters[msg.sender];
-        /*投票条件：1）投票活动为true
-          		      2）用户未投票
-                    3）提案合法       */
+        
         require(state);
         require(!sender.voted);
         require(toProposal < proposals.length);
@@ -116,7 +103,6 @@ contract Ballot {
         emit e_vote(toProposal);
     }
     
-    //返回最大票数
     function winningProposal() public view returns (uint8 _winningProposal) {
         uint256 winningVoteCount = 0;
         for (uint8 prop = 0; prop < proposals.length; prop++)
